@@ -126,6 +126,9 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
 
+    # Init
+    sess.run(tf.global_variables_initializer())
+
     # Train epoch times
     for epoch in range(epochs):
         for image, label in get_batches_fn(batch_size):
