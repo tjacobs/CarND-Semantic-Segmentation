@@ -107,7 +107,14 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
-    # TODO: Implement function
+
+    # Loop through epochs
+    for epoch in epochs:
+        for image, label in get_batches_fn(batch_size):
+            # Training
+            pass
+
+
     pass
 tests.test_train_nn(train_nn)
 
