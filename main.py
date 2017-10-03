@@ -68,17 +68,19 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     vgg_layer4_out_conv1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # Add skip layer from 4
-    print(vgg_layer4_out_conv1x1.shape)
-    print(output4_mirror.shape)
     output4_combined = tf.add(vgg_layer4_out_conv1x1, output4_mirror)
 
     # Upsample 2x
     output3_mirror = tf.layers.conv2d_transpose(output4_combined, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
+    # 1x1 conv the old vgg_layer3_out to match our size
+    vgg_layer3_out_conv1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
     # Add skip layer from 4
+    output3_combined = tf.add(vgg_layer3_out_conv1x1, output3_mirror)
 
     # Upsample 8x
-    output = tf.layers.conv2d_transpose(output3_mirror, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    output = tf.layers.conv2d_transpose(output3_combined, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     return output
 tests.test_layers(layers)
