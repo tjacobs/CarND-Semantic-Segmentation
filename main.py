@@ -25,8 +25,7 @@ def load_vgg(sess, vgg_path):
     :return: Tuple of Tensors from VGG model (image_input, keep_prob, layer3_out, layer4_out, layer7_out)
     """
 
-
-
+    # Names
     vgg_tag = 'vgg16'
     vgg_input_tensor_name = 'image_input:0'
     vgg_keep_prob_tensor_name = 'keep_prob:0'
@@ -63,6 +62,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     conv1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     output = tf.layers.conv2d_transpose(conv1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
+    tf.Print(output, [tf.shape(output)])
 #    input  = tf.add(input, pool_4)
 
     return output
@@ -86,7 +86,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
 
     # Train this baby
-    train_op = tf.train.AdamOptimizer( 1e-4).minimize(cross_entropy_loss)
+    train_op = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy_loss)
 
     return logits, train_op, cross_entropy_loss
 tests.test_optimize(optimize)
@@ -109,7 +109,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     """
 
     # Loop through epochs
-    for epoch in epochs:
+    for epoch in range(epochs):
         for image, label in get_batches_fn(batch_size):
             # Training
             pass
@@ -129,27 +129,34 @@ def run():
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
 
-    # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
-    # You'll need a GPU with at least 10 teraFLOPS to train on.
-    #  https://www.cityscapes-dataset.com/
+    # Train and Inference on the cityscapes dataset instead of the Kitti dataset.
+    # https://www.cityscapes-dataset.com/
 
     with tf.Session() as sess:
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
+
         # Create function to get batches
         get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road/training'), image_shape)
 
-        # OPTIONAL: Augment Images for better results
-        #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
+        # Augment Images for better results
+        # https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
-        # TODO: Build NN using load_vgg, layers, and optimize function
+        correct_label = None
+        learning_rate = 1e-4
 
-        # TODO: Train NN using the train_nn function
+        # Build NN using load_vgg, layers, and optimize function
+        input_tensor, keep_prob_tensor, layer3_out_tensor, layer4_out_tensor, layer7_out_tensor = load_vgg(sess, vgg_path)
+        nn_last_layer = layers(layer3_out_tensor, layer4_out_tensor, layer7_out_tensor, num_classes)
+        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, num_classes)
 
-        # TODO: Save inference data using helper.save_inference_samples
-        #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
+        # Train NN using the train_nn function
+        train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
 
-        # OPTIONAL: Apply the trained model to a video
+        # Save inference data using helper.
+        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
+
+        # Apply the trained model to a video
 
 
 if __name__ == '__main__':
