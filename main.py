@@ -50,22 +50,34 @@ tests.test_load_vgg(load_vgg, tf)
 
 def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
-    Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
-    :param vgg_layer7_out: TF Tensor for VGG Layer 3 output
+    Create the layers for a fully convolutional network. Build skip-layers using the vgg layers.
+    :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
     :param vgg_layer4_out: TF Tensor for VGG Layer 4 output
-    :param vgg_layer3_out: TF Tensor for VGG Layer 7 output
+    :param vgg_layer7_out: TF Tensor for VGG Layer 7 output
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
 
-    # Let's do a conv from layer 7
+    # Let's do a 1x1 conv starting from vgg_layer7_out
     conv1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    output = tf.layers.conv2d_transpose(conv1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    tf.Print(output, [tf.shape(output)])
-#    input  = tf.add(input, pool_4)
+    # And add upsampling decoder
+    output7_mirror = tf.layers.conv2d_transpose(conv1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    return output
+    # Add skip layer from 4
+#    output7_combined = tf.add(output7_mirror, vgg_layer4_out)
+    tf.Print(output7_mirror, [tf.shape(output7_mirror)])
+    print(output7_mirror.shape)
+    print(vgg_layer4_out.shape)
+    output4_mirror = tf.layers.conv2d_transpose(output7_mirror, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    # Add skip layer from 4
+#    output3_combined  = tf.add(output3_mirror, vgg_layer3_out)
+    output3_mirror = tf.layers.conv2d_transpose(output4_mirror, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+
+
+    return output3_mirror
 tests.test_layers(layers)
 
 
