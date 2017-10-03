@@ -61,23 +61,26 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     # Let's do a 1x1 conv starting from vgg_layer7_out
     conv1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    # And add upsampling decoder
-    output7_mirror = tf.layers.conv2d_transpose(conv1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    # Add our first upsampling 2x layer in the decoder
+    output4_mirror = tf.layers.conv2d_transpose(conv1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    # 1x1 conv the old vgg_layer4_out to match our size
+    vgg_layer4_out_conv1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # Add skip layer from 4
-#    output7_combined = tf.add(output7_mirror, vgg_layer4_out)
-    tf.Print(output7_mirror, [tf.shape(output7_mirror)])
-    print(output7_mirror.shape)
-    print(vgg_layer4_out.shape)
-    output4_mirror = tf.layers.conv2d_transpose(output7_mirror, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    print(vgg_layer4_out_conv1x1.shape)
+    print(output4_mirror.shape)
+    output4_combined = tf.add(vgg_layer4_out_conv1x1, output4_mirror)
+
+    # Upsample 2x
+    output3_mirror = tf.layers.conv2d_transpose(output4_combined, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # Add skip layer from 4
-#    output3_combined  = tf.add(output3_mirror, vgg_layer3_out)
-    output3_mirror = tf.layers.conv2d_transpose(output4_mirror, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
+    # Upsample 8x
+    output = tf.layers.conv2d_transpose(output3_mirror, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-
-    return output3_mirror
+    return output
 tests.test_layers(layers)
 
 
@@ -123,10 +126,9 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     # Loop through epochs
     for epoch in range(epochs):
         for image, label in get_batches_fn(batch_size):
-            # Training
+            # Train
+            #sess.run([train_op], {image: [image]})
             pass
-
-
     pass
 tests.test_train_nn(train_nn)
 

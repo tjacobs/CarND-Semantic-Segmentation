@@ -40,7 +40,7 @@ def _assert_tensor_shape(tensor, shape, display_name):
 
 class TmpMock(object):
     """
-    Mock a attribute.  Restore attribute when exiting scope.
+    Mock an attribute.  Restore attribute when exiting scope.
     """
     def __init__(self, module, attrib_name):
         self.original_attrib = deepcopy(getattr(module, attrib_name))
