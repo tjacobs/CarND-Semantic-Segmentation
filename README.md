@@ -23,22 +23,22 @@ Now we have our decoder, and it's time to train it. Our loss is defined as softm
 
 Training it for 10 epochs originally, I got a loss of 1, and inference output labelled images such as:
 
-[](1.png)
+![](1.png)
 
 I added the normal random initializer to each decoder layer, and got much better results, bringing the loss down to 0.08:
 
-[](2.png)
+![](2.png)
 
 I increased epochs to 20, batch size to 20 from 10, and retrained, and got even better results, with loss down at 0.04:
 
-[](3.png)
+![](3.png)
 
 Here are some more sample output images. As you can see, the road is pretty clearly marked.
 
-[](4.png)
-[](5.png)
-[](6.png)
-[](7.png)
+![](4.png)
+![](5.png)
+![](6.png)
+![](7.png)
 
 A pretty good result for semantic segmentation of the road images!
 
