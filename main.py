@@ -172,8 +172,8 @@ def run():
 
         # Training settings
         learning_rate = tf.placeholder(tf.float32, name='learning_rate')
-        epochs = 10
-        batch_size = 10
+        epochs = 20
+        batch_size = 20
 
         # Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob_tensor, layer3_out_tensor, layer4_out_tensor, layer7_out_tensor = load_vgg(sess, vgg_path)

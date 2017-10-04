@@ -1,36 +1,51 @@
 # Semantic Segmentation
 ### Introduction
-In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+The goal of this project is to train a neural network that is able to classify each pixel in an image as either road or non-road. This is known as a Fully Convolutional Network (FCN).
 
-### Setup
-##### Frameworks and Packages
-Make sure you have the following is installed:
- - [Python 3](https://www.python.org/)
- - [TensorFlow](https://www.tensorflow.org/)
- - [NumPy](http://www.numpy.org/)
- - [SciPy](https://www.scipy.org/)
-##### Dataset
-Download the [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php) from [here](http://www.cvlibs.net/download.php?file=data_road.zip).  Extract the dataset in the `data` folder.  This will create the folder `data_road` with all the training a test images.
+### Development
+The first task is to take a regular old VGG neural network, and chop the end off it. We load the VGG network with:
 
-### Start
-##### Implement
-Implement the code in the `main.py` module indicated by the "TODO" comments.
-The comments indicated with "OPTIONAL" tag are not required to complete.
+```
+    tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
+```
+
+And then the first step of building the decoder is we grab the output of layer 7 of the VGG network, and put a 1x1 convolution on the end of it.
+
+Then to build the rest of the decoder part of the Fully Convolutional Network, we add a conv2d_transpose layer to upsample the output 2x, making sure to also add a regularizer, and a normal random initializer. Without these two things, I was not getting very good cross entropy loss or image output results.
+
+Then we add a skip layer from VGG's layer 3 and add the output from that into the output of the transpose layer. But before we do that we need to do a 1x1 convolution, to get it into the right shape.
+
+Then we do the same again, another conv2d_transpose to upsample 2x, another skip layer, this time from further back, VGG layer 3.
+
+Then we do it one more time, this time upsampling 8x, but no additional skip layer.
+
+Now we have our decoder, and it's time to train it. Our loss is defined as softmax cross entropy, comparing the network's output to the known road-labelled pixel images.
+
+Training it for 10 epochs originally, I got a loss of 1, and inference output labelled images such as:
+
+[](1.png)
+
+I added the normal random initializer to each decoder layer, and got much better results, bringing the loss down to 0.08:
+
+[](2.png)
+
+I increased epochs to 20, batch size to 20 from 10, and retrained, and got even better results, with loss down at 0.04:
+
+[](3.png)
+
+Here are some more sample output images. As you can see, the road is pretty clearly marked.
+
+[](4.png)
+[](5.png)
+[](6.png)
+[](7.png)
+
+A pretty good result for semantic segmentation of the road images!
+
 ##### Run
-Run the following command to run the project:
+After downloading data.zip and extracting it to the data folder, run the following command to run the project:
 ```
-python main.py
+python3 main.py
 ```
-**Note** If running this in Jupyter Notebook system messages, such as those regarding test status, may appear in the terminal rather than the notebook.
 
-### Submission
-1. Ensure you've passed all the unit tests.
-2. Ensure you pass all points on [the rubric](https://review.udacity.com/#!/rubrics/989/view).
-3. Submit the following in a zip file.
- - `helper.py`
- - `main.py`
- - `project_tests.py`
- - Newest inference images from `runs` folder  (**all images from the most recent run**)
- 
- ## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+
