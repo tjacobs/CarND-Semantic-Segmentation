@@ -5,7 +5,6 @@ import warnings
 from distutils.version import LooseVersion
 import project_tests as tests
 
-
 # Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
 print('TensorFlow Version: {}'.format(tf.__version__))
@@ -15,7 +14,6 @@ if not tf.test.gpu_device_name():
     warnings.warn('No GPU found. Please use a GPU to train your neural network.')
 else:
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
-
 
 def load_vgg(sess, vgg_path):
     """
@@ -59,28 +57,34 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
 
     # Let's do a 1x1 conv starting from vgg_layer7_out
-    conv1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    conv1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_initializer=tf.random_normal_initializer(stddev=1e-2),
+									       kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # Add our first upsampling 2x layer in the decoder
-    output4_mirror = tf.layers.conv2d_transpose(conv1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    output4_mirror = tf.layers.conv2d_transpose(conv1x1, num_classes, 4, 2, padding='same', kernel_initializer=tf.random_normal_initializer(stddev=1e-2),
+											    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # 1x1 conv the old vgg_layer4_out to match our size
-    vgg_layer4_out_conv1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    vgg_layer4_out_conv1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_initializer=tf.random_normal_initializer(stddev=1e-2),
+											      kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # Add skip layer from 4
     output4_combined = tf.add(vgg_layer4_out_conv1x1, output4_mirror)
 
     # Upsample 2x
-    output3_mirror = tf.layers.conv2d_transpose(output4_combined, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    output3_mirror = tf.layers.conv2d_transpose(output4_combined, num_classes, 4, 2, padding='same', kernel_initializer=tf.random_normal_initializer(stddev=1e-2),
+												     kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # 1x1 conv the old vgg_layer3_out to match our size
-    vgg_layer3_out_conv1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    vgg_layer3_out_conv1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same', kernel_initializer=tf.random_normal_initializer(stddev=1e-2),
+											      kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # Add skip layer from 4
     output3_combined = tf.add(vgg_layer3_out_conv1x1, output3_mirror)
 
     # Upsample 8x
-    output = tf.layers.conv2d_transpose(output3_combined, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    output = tf.layers.conv2d_transpose(output3_combined, num_classes, 16, 8, padding='same', kernel_initializer=tf.random_normal_initializer(stddev=1e-2),
+											      kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     return output
 tests.test_layers(layers)
@@ -131,9 +135,9 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
 
     # Train epoch times
     for epoch in range(epochs):
+        print("Training, epoch {}.".format(epoch))
         for image, label in get_batches_fn(batch_size):
             # Train
-            print("Training, epoch {}.".format(epoch))
             _, loss = sess.run([train_op, cross_entropy_loss], feed_dict={input_image: image, correct_label: label, keep_prob: 0.5, learning_rate: 1e-4})
             print("Loss: {:.2f}.".format(loss))
     pass
